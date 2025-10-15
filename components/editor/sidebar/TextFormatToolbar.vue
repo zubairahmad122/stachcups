@@ -149,37 +149,14 @@ const emit = defineEmits([
 ])
 
 const toolbarStyle = computed(() => {
-  if (!props.elementPosition) return { display: 'none' }
-
-  const toolbarWidth = 150
-  const elementWidth = props.elementSize?.width || 100 
-  const halfElement = elementWidth / 2
-
-  // Check edges properly
-  const isNearLeftEdge = props.elementPosition.x - halfElement < toolbarWidth / 2
-  const isNearRightEdge = props.elementPosition.x + halfElement > (798 - toolbarWidth / 2)
-
-  let style = {
-    position: 'absolute',
-    top: `${props.elementPosition.y - 80}px`,
-    zIndex: 10
+  // Static toolbar at top of canvas
+  return {
+    position: 'fixed',
+    top: '80px',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    zIndex: 1000
   }
-
-  if (isNearLeftEdge) {
-    // Align to left edge
-    style.left = '10px'
-    style.transform = 'none'
-  } else if (isNearRightEdge) {
-    // Align to right edge
-    style.right = '10px'
-    style.transform = 'none'
-  } else {
-    // Center on element
-    style.left = `${props.elementPosition.x + halfElement}px`
-    style.transform = 'translateX(-50%)'
-  }
-
-  return style
 })
 
 const toggleBold = () => {

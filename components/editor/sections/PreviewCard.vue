@@ -1,7 +1,7 @@
 <template>
   <q-card
     v-if="$q.screen.gt.sm && !isCheckout"
-    class="absolute-top-right z-index-20 q-ma-md"
+    class="sticky top-20 right-0 z-index-20 z-10 ml-auto q-ma-md"
     :class="{
       'preview-card': !zoom,
       'rounded-lg w-[400px] h-[420px] overflow-hidden': zoom,

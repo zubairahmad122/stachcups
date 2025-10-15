@@ -104,16 +104,10 @@ const emit = defineEmits([
 ])
 
 const toolbarStyle = computed(() => {
-  if (!props.elementPosition) return { display: 'none' }
-  
-  const topPosition = Math.max(10, props.elementPosition.y - 60)
-  
   return {
-    position: 'absolute',
-    top: `${topPosition}px`,
-    left: `${props.elementPosition.x + (props.elementSize.width / 2)}px`,
-    transform: 'translateX(-50%)',
-    zIndex: 1000
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px'
   }
 })
 </script>

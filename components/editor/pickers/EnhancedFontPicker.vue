@@ -23,10 +23,10 @@
       <div class="categories-grid">
         <button
           v-for="category in fontCategories"
-          :key="category.value"
+          :key="category.id"
           class="category-btn"
-          :class="{ active: selectedCategory === category.value }"
-          @click="selectedCategory = category.value"
+          :class="{ active: selectedCategory === category.id }"
+          @click="selectedCategory = category.id"
         >
           <q-icon :name="category.icon" size="16px" />
           <span class="category-label">{{ category.label }}</span>

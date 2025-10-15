@@ -239,34 +239,51 @@ export const useEditorStore = defineStore('editor', {
       const selectedId = this.selectedElementId
       if (!selectedId) return
 
-      const element = this.elements.find((el) => el.id === selectedId)
-      if (!element) return
+      const elementIndex = this.elements.findIndex((el) => el.id === selectedId)
+      if (elementIndex === -1) return
 
+      const element = this.elements[elementIndex]
       const canvasWidth = this.canvasWidth
       const canvasHeight = this.canvasHeight
       const elementWidth = element.width * (element.scale || 1)
       const elementHeight = element.height * (element.scale || 1)
 
+      let newX = element.position.x
+      let newY = element.position.y
+
+      // IMPORTANT: In Konva, elements with offsetX/offsetY set to width/2 and height/2
+      // have their position (x,y) at the CENTER of the element, not top-left corner
       switch (alignment) {
         case 'left':
-          element.position.x = 0
+          // Left edge should touch left canvas edge
+          newX = elementWidth / 2
           break
         case 'center':
-          element.position.x = (canvasWidth - elementWidth) / 2
+          // Center of element should be at center of canvas
+          newX = canvasWidth / 2
           break
         case 'right':
-          element.position.x = canvasWidth - elementWidth
+          // Right edge should touch right canvas edge
+          newX = canvasWidth - (elementWidth / 2)
           break
         case 'top':
-          element.position.y = 0
+          // Top edge should touch top canvas edge
+          newY = elementHeight / 2
           break
         case 'middle':
-          element.position.y = (canvasHeight - elementHeight) / 2
+          // Middle of element should be at middle of canvas
+          newY = canvasHeight / 2
           break
         case 'bottom':
-          element.position.y = canvasHeight - elementHeight
+          // Bottom edge should touch bottom canvas edge
+          newY = canvasHeight - (elementHeight / 2)
           break
       }
+
+      // Update element with new position using updateElement for proper reactivity
+      this.updateElement(selectedId, {
+        position: { x: newX, y: newY }
+      })
     },
 
     // Tools

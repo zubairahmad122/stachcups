@@ -432,16 +432,39 @@ const textConfig = computed(() => {
       config.strokeWidth = props.element.stroke.width || 2;
     }
 
-    if (props.element.shadow?.enabled) {
+    // Apply shadow or engrave (engrave overrides shadow)
+    if (props.element.engrave) {
+      // Engrave effect: Create realistic carved/engraved appearance
+      // 1. Add inner shadow (dark) for depth
+      config.shadowColor = '#000000';
+      config.shadowBlur = 3;
+      config.shadowOffsetX = -1;
+      config.shadowOffsetY = -1;
+      config.shadowOpacity = 0.8;
+
+      // 2. Add stroke highlight on opposite side for 3D effect
+      config.stroke = 'rgba(255, 255, 255, 0.4)';
+      config.strokeWidth = 1;
+
+      // 3. Slightly darken the fill for carved-in appearance
+      const originalFill = config.fill || '#000000';
+      if (originalFill.startsWith('#')) {
+        // Darken hex color
+        const darkenColor = (hex) => {
+          const r = Math.max(0, parseInt(hex.slice(1, 3), 16) - 30);
+          const g = Math.max(0, parseInt(hex.slice(3, 5), 16) - 30);
+          const b = Math.max(0, parseInt(hex.slice(5, 7), 16) - 30);
+          return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+        };
+        config.fill = darkenColor(originalFill);
+      }
+      config.opacity = 0.85;
+    } else if (props.element.shadow?.enabled) {
       config.shadowColor = props.element.shadow.color || '#000000';
       config.shadowBlur = props.element.shadow.blur || 5;
       config.shadowOffsetX = props.element.shadow.offsetX || 2;
       config.shadowOffsetY = props.element.shadow.offsetY || 2;
       config.shadowOpacity = props.element.shadow.opacity || 0.5;
-    }
-
-    if (props.element.engrave) {
-      config.globalCompositeOperation = 'destination-out';
     }
 
     return config;
@@ -497,16 +520,39 @@ const textConfig = computed(() => {
       config.strokeWidth = props.element.stroke.width || 2;
     }
 
-    if (props.element.shadow?.enabled) {
+    // Apply shadow or engrave (engrave overrides shadow)
+    if (props.element.engrave) {
+      // Engrave effect: Create realistic carved/engraved appearance
+      // 1. Add inner shadow (dark) for depth
+      config.shadowColor = '#000000';
+      config.shadowBlur = 3;
+      config.shadowOffsetX = -1;
+      config.shadowOffsetY = -1;
+      config.shadowOpacity = 0.8;
+
+      // 2. Add stroke highlight on opposite side for 3D effect
+      config.stroke = 'rgba(255, 255, 255, 0.4)';
+      config.strokeWidth = 1;
+
+      // 3. Slightly darken the fill for carved-in appearance
+      const originalFill = config.fill || '#000000';
+      if (originalFill.startsWith('#')) {
+        // Darken hex color
+        const darkenColor = (hex) => {
+          const r = Math.max(0, parseInt(hex.slice(1, 3), 16) - 30);
+          const g = Math.max(0, parseInt(hex.slice(3, 5), 16) - 30);
+          const b = Math.max(0, parseInt(hex.slice(5, 7), 16) - 30);
+          return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+        };
+        config.fill = darkenColor(originalFill);
+      }
+      config.opacity = 0.85;
+    } else if (props.element.shadow?.enabled) {
       config.shadowColor = props.element.shadow.color || '#000000';
       config.shadowBlur = props.element.shadow.blur || 5;
       config.shadowOffsetX = props.element.shadow.offsetX || 2;
       config.shadowOffsetY = props.element.shadow.offsetY || 2;
       config.shadowOpacity = props.element.shadow.opacity || 0.5;
-    }
-
-    if (props.element.engrave) {
-      config.globalCompositeOperation = 'destination-out';
     }
 
     return config;
@@ -799,7 +845,17 @@ watch(
     props.element.content,
     props.element.color,
     props.element.letterSpacing,
-    props.element.lineHeight
+    props.element.lineHeight,
+    props.element.engrave,
+    props.element.stroke?.enabled,
+    props.element.stroke?.color,
+    props.element.stroke?.width,
+    props.element.shadow?.enabled,
+    props.element.shadow?.color,
+    props.element.shadow?.blur,
+    props.element.shadow?.offsetX,
+    props.element.shadow?.offsetY,
+    props.element.shadow?.opacity
   ],
   () => {
     if (props.elementType === 'text' || props.elementType === 'monogram') {

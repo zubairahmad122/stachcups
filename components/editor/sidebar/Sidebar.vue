@@ -2,7 +2,7 @@
   <div>
     <div
       v-if="!isMobile"
-      class="fixed left-0 top-0 h-screen w-20 flex flex-col z-40 shadow-sm"
+      class="fixed left-0 top-16 h-screen w-20 flex flex-col z-40 shadow-sm"
     >
 
       <div class="flex-1 px-2 py-4 space-y-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
@@ -178,7 +178,7 @@
 
           <div
             v-if="activeMenu === 'text'"
-            class="fixed top-16 left-20 w-80 h-[calc(100vh-4rem)] bg-white border border-gray-200 shadow-xl z-50 flex flex-col rounded-r-lg overflow-hidden"
+            class="fixed top-16 left-20 w-96 h-[calc(100vh-4rem)] bg-white border border-gray-200 shadow-xl z-50 flex flex-col rounded-r-lg overflow-hidden"
           >
             <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 flex-shrink-0">
               <h3 class="text-lg font-semibold text-gray-900">Text</h3>
@@ -233,6 +233,142 @@
                     @letter-spacing-change="handleLetterSpacingChange"
                     @line-height-change="handleLineHeightChange"
                   />
+                </div>
+
+                <div class="border-t border-gray-200 my-4"></div>
+
+                <!-- Advanced Text Effects -->
+                <div class="space-y-4">
+                  <h4 class="text-sm font-medium text-gray-700 uppercase tracking-wide">Advanced Effects</h4>
+
+                  <!-- Stroke -->
+                  <div class="space-y-2">
+                    <div class="flex items-center justify-between">
+                      <label class="text-xs font-medium text-gray-600">Stroke</label>
+                      <q-toggle
+                        v-model="strokeEnabled"
+                        color="purple"
+                        size="sm"
+                        @update:model-value="toggleStroke"
+                      />
+                    </div>
+                    <div v-if="strokeEnabled" class="space-y-2 pl-4">
+                      <q-input
+                        v-model="strokeColor"
+                        type="color"
+                        dense
+                        outlined
+                        label="Color"
+                        @update:model-value="handleStrokeColorChange"
+                      />
+                      <div class="flex items-center gap-2">
+                        <span class="text-xs text-gray-500">Width:</span>
+                        <q-slider
+                          v-model="strokeWidth"
+                          :min="1"
+                          :max="10"
+                          :step="1"
+                          color="purple"
+                          class="flex-1"
+                          @update:model-value="handleStrokeWidthChange"
+                        />
+                        <span class="text-xs text-gray-500 w-10">{{ strokeWidth }}px</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Shadow -->
+                  <div class="space-y-2">
+                    <div class="flex items-center justify-between">
+                      <label class="text-xs font-medium text-gray-600">Shadow</label>
+                      <q-toggle
+                        v-model="shadowEnabled"
+                        color="purple"
+                        size="sm"
+                        @update:model-value="toggleShadow"
+                      />
+                    </div>
+                    <div v-if="shadowEnabled" class="space-y-2 pl-4">
+                      <q-input
+                        v-model="shadowColor"
+                        type="color"
+                        dense
+                        outlined
+                        label="Color"
+                        @update:model-value="handleShadowColorChange"
+                      />
+                      <div class="space-y-1">
+                        <div class="flex items-center gap-2">
+                          <span class="text-xs text-gray-500 w-16">Blur:</span>
+                          <q-slider
+                            v-model="shadowBlur"
+                            :min="0"
+                            :max="20"
+                            :step="1"
+                            color="purple"
+                            class="flex-1"
+                            @update:model-value="handleShadowBlurChange"
+                          />
+                          <span class="text-xs text-gray-500 w-10">{{ shadowBlur }}px</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                          <span class="text-xs text-gray-500 w-16">X Offset:</span>
+                          <q-slider
+                            v-model="shadowOffsetX"
+                            :min="-20"
+                            :max="20"
+                            :step="1"
+                            color="purple"
+                            class="flex-1"
+                            @update:model-value="handleShadowOffsetXChange"
+                          />
+                          <span class="text-xs text-gray-500 w-10">{{ shadowOffsetX }}px</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                          <span class="text-xs text-gray-500 w-16">Y Offset:</span>
+                          <q-slider
+                            v-model="shadowOffsetY"
+                            :min="-20"
+                            :max="20"
+                            :step="1"
+                            color="purple"
+                            class="flex-1"
+                            @update:model-value="handleShadowOffsetYChange"
+                          />
+                          <span class="text-xs text-gray-500 w-10">{{ shadowOffsetY }}px</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                          <span class="text-xs text-gray-500 w-16">Opacity:</span>
+                          <q-slider
+                            v-model="shadowOpacity"
+                            :min="0"
+                            :max="1"
+                            :step="0.1"
+                            color="purple"
+                            class="flex-1"
+                            @update:model-value="handleShadowOpacityChange"
+                          />
+                          <span class="text-xs text-gray-500 w-10">{{ Math.round(shadowOpacity * 100) }}%</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Engrave -->
+                  <div class="space-y-2">
+                    <div class="flex items-center justify-between">
+                      <label class="text-xs font-medium text-gray-600">Engrave Effect</label>
+                      <q-toggle
+                        v-model="engraveEnabled"
+                        color="purple"
+                        size="sm"
+                        @update:model-value="toggleEngrave"
+                      />
+                    </div>
+                    <div class="text-xs text-gray-500 pl-4">
+                      Creates a knockout effect where text cuts through the background
+                    </div>
+                  </div>
                 </div>
 
               </div>

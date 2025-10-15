@@ -17,82 +17,6 @@
       </div>
     </div>
 
-    <!-- Alignment Tools -->
-    <div class="alignment-tools">
-      <div class="tool-group">
-        <label class="tool-label">Align:</label>
-        <q-btn-group flat dense>
-          <q-btn
-            flat
-            dense
-            size="sm"
-            icon="format_align_left"
-            @click="alignElement('left')"
-            :disable="!hasSelection"
-          >
-            <q-tooltip>Align Left</q-tooltip>
-          </q-btn>
-          <q-btn
-            flat
-            dense
-            size="sm"
-            icon="format_align_center"
-            @click="alignElement('center')"
-            :disable="!hasSelection"
-          >
-            <q-tooltip>Align Center</q-tooltip>
-          </q-btn>
-          <q-btn
-            flat
-            dense
-            size="sm"
-            icon="format_align_right"
-            @click="alignElement('right')"
-            :disable="!hasSelection"
-          >
-            <q-tooltip>Align Right</q-tooltip>
-          </q-btn>
-        </q-btn-group>
-      </div>
-
-      <div class="tool-group">
-        <q-btn-group flat dense>
-          <q-btn
-            flat
-            dense
-            size="sm"
-            icon="vertical_align_top"
-            @click="alignElement('top')"
-            :disable="!hasSelection"
-          >
-            <q-tooltip>Align Top</q-tooltip>
-          </q-btn>
-          <q-btn
-            flat
-            dense
-            size="sm"
-            icon="vertical_align_center"
-            @click="alignElement('middle')"
-            :disable="!hasSelection"
-          >
-            <q-tooltip>Align Middle</q-tooltip>
-          </q-btn>
-          <q-btn
-            flat
-            dense
-            size="sm"
-            icon="vertical_align_bottom"
-            @click="alignElement('bottom')"
-            :disable="!hasSelection"
-          >
-            <q-tooltip>Align Bottom</q-tooltip>
-          </q-btn>
-        </q-btn-group>
-      </div>
-    </div>
-
-    <q-separator class="q-my-sm" />
-
     <!-- Layer List -->
     <div class="layer-list" v-if="layers.length > 0">
       <draggable
@@ -226,7 +150,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, nextTick } from 'vue'
 import { useQuasar } from 'quasar'
 import { useEditorStore } from '~/store/editor'
 import draggable from 'vuedraggable'
@@ -253,8 +177,6 @@ const layers = computed({
     })
   },
 })
-
-const hasSelection = computed(() => !!editorStore.selectedElementId)
 
 // Layer Information
 const getLayerIcon = (layer) => {
@@ -424,21 +346,6 @@ const handleDragEnd = () => {
   })
 }
 
-// Alignment
-const alignElement = (alignment) => {
-  editorStore.alignElements(alignment)
-  forceCanvasRefresh()
-  emit('layer-update')
-
-  $q.notify({
-    message: `Aligned ${alignment}`,
-    color: 'positive',
-    icon: 'align_horizontal_center',
-    position: 'top',
-    timeout: 1000,
-  })
-}
-
 // Force canvas refresh by triggering Vue reactivity
 const forceCanvasRefresh = () => {
   // Trigger reactivity by touching the store
@@ -479,27 +386,6 @@ const emit = defineEmits(['layer-update'])
 .layer-actions {
   display: flex;
   gap: 4px;
-}
-
-.alignment-tools {
-  padding: 12px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  background: #f9fafb;
-}
-
-.tool-group {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.tool-label {
-  font-size: 12px;
-  font-weight: 500;
-  color: #6b7280;
-  min-width: 40px;
 }
 
 .layer-list {
