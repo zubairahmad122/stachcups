@@ -122,7 +122,40 @@ let pendingTextUpdate = null;
 
 const baseFontSize = 16;
 
-// Frame clipping support
+const textMeasurementCache = new Map();
+
+const getTextMeasurements = (text, fontSize, font, fontStyle, letterSpacing, lineHeight) => {
+  const cacheKey = `${text}|${fontSize}|${font}|${fontStyle}|${letterSpacing}|${lineHeight}`;
+
+  if (textMeasurementCache.has(cacheKey)) {
+    return textMeasurementCache.get(cacheKey);
+  }
+
+  const tempText = new Konva.Text({
+    text,
+    fontSize,
+    fontFamily: font,
+    fontStyle,
+    letterSpacing,
+    lineHeight,
+  });
+
+  const measurements = {
+    width: tempText.width(),
+    height: tempText.height(),
+  };
+
+  tempText.destroy();
+
+  if (textMeasurementCache.size > 100) {
+    const firstKey = textMeasurementCache.keys().next().value;
+    textMeasurementCache.delete(firstKey);
+  }
+
+  textMeasurementCache.set(cacheKey, measurements);
+  return measurements;
+};
+
 const hasFrame = computed(() => {
   return props.element.frame && props.element.frame.shape && props.element.frame.shape !== 'none'
 });
@@ -266,25 +299,40 @@ const constrainPosition = (position) => {
   return { x: constrainedX, y: constrainedY };
 };
 
-const groupConfig = computed(() => ({
-  x: props.element.position?.x || 0,
-  y: props.element.position?.y || 0,
-  rotation: props.element.rotation || 0,
-  scaleX: props.element.scale || 1,
-  scaleY: props.element.scale || 1,
-  draggable: !props.isLooped && !props.isEditing && !props.isLocked && !props.isDrawToolActive,
-  opacity: props.isLooped ? 0.6 : (props.isLocked ? 0.7 : (props.isEditing ? 0.3 : (props.isDrawToolActive ? 0.5 : 1))),
-  listening: !props.isLooped && !props.isDrawToolActive,
-  id: props.element.id,
-  dragBoundFunc: (pos) => {
-    const bounds = getElementBounds();
-    const halfWidth = bounds.width / 2;
-    const halfHeight = bounds.height / 2;
-    const newX = Math.max(halfWidth, Math.min(pos.x, props.canvasWidth - halfWidth));
-    const newY = Math.max(halfHeight, Math.min(pos.y, props.canvasHeight - halfHeight));
-    return { x: newX, y: newY };
+const groupConfig = computed(() => {
+  const baseOpacity = props.element.opacity ?? 1
+
+  let finalOpacity = baseOpacity
+  if (props.isLooped) {
+    finalOpacity *= 0.6
+  } else if (props.isLocked) {
+    finalOpacity *= 0.7
+  } else if (props.isEditing) {
+    finalOpacity *= 0.3
+  } else if (props.isDrawToolActive) {
+    finalOpacity *= 0.5
   }
-}));
+
+  return {
+    x: props.element.position?.x || 0,
+    y: props.element.position?.y || 0,
+    rotation: props.element.rotation || 0,
+    scaleX: props.element.scale || 1,
+    scaleY: props.element.scale || 1,
+    draggable: !props.isLooped && !props.isEditing && !props.isLocked && !props.isDrawToolActive,
+    opacity: finalOpacity,
+    listening: !props.isLooped && !props.isDrawToolActive,
+    id: props.element.id,
+    dragBoundFunc: (pos) => {
+      const bounds = getElementBounds();
+      const halfWidth = bounds.width / 2;
+      const halfHeight = bounds.height / 2;
+      const newX = Math.max(halfWidth, Math.min(pos.x, props.canvasWidth - halfWidth));
+      const newY = Math.max(halfHeight, Math.min(pos.y, props.canvasHeight - halfHeight));
+      return { x: newX, y: newY };
+    }
+  }
+});
 const imageConfig = computed(() => {
   if (props.elementType !== 'image' || !loadedImage.value) return {};
   
@@ -320,8 +368,6 @@ const stripHtml = (html) => {
 };
 
 const textConfig = computed(() => {
-  // CRITICAL FIX: Don't early return based on elementType
-  // Process based on actual element.type instead
   const elementRealType = props.element?.type || 'text';
 
   if(elementRealType === 'emoji') {
@@ -363,27 +409,22 @@ const textConfig = computed(() => {
       lineHeight = (fontSize + spacing) / fontSize;
       height = (fontSize * letterCount) + (spacing * (letterCount - 1)) + 40;
 
-      const tempText = new Konva.Text({
-        text: letters.join(''),
-        fontSize: fontSize,
-        fontFamily: font,
-        fontStyle: `${props.element.bold ? 'bold' : 'normal'} ${props.element.italic ? 'italic' : 'normal'}`,
-      });
-      width = Math.max(tempText.width() + 40, fontSize * 2);
-      tempText.destroy();
+      const fontStyle = `${props.element.bold ? 'bold' : 'normal'} ${props.element.italic ? 'italic' : 'normal'}`;
+      const measurements = getTextMeasurements(letters.join(''), fontSize, font, fontStyle, 0, 1);
+      width = Math.max(measurements.width + 40, fontSize * 2);
 
     } else if (layoutStyle === 'circle') {
-      const tempText = new Konva.Text({
-        text: text.replace(/\n/g, ''),
-        fontSize: fontSize,
-        fontFamily: font,
-        fontStyle: `${props.element.bold ? 'bold' : 'normal'} ${props.element.italic ? 'italic' : 'normal'}`,
-      });
-      const textWidth = tempText.width();
-      const textHeight = tempText.height();
-      tempText.destroy();
+      const fontStyle = `${props.element.bold ? 'bold' : 'normal'} ${props.element.italic ? 'italic' : 'normal'}`;
+      const measurements = getTextMeasurements(
+        text.replace(/\n/g, ''),
+        fontSize,
+        font,
+        fontStyle,
+        0,
+        1.2
+      );
 
-      const maxDimension = Math.max(textWidth, textHeight);
+      const maxDimension = Math.max(measurements.width, measurements.height);
       width = maxDimension + 60;
       height = maxDimension + 60;
       lineHeight = 1.2;
@@ -393,17 +434,18 @@ const textConfig = computed(() => {
         ? text.replace(/\n/g, ' ')
         : text.replace(/\n/g, '');
 
-      const tempText = new Konva.Text({
-        text: displayText,
-        fontSize: fontSize,
-        fontFamily: font,
-        fontStyle: `${props.element.bold ? 'bold' : 'normal'} ${props.element.italic ? 'italic' : 'normal'}`,
-        letterSpacing: letterSpacing,
-      });
+      const fontStyle = `${props.element.bold ? 'bold' : 'normal'} ${props.element.italic ? 'italic' : 'normal'}`;
+      const measurements = getTextMeasurements(
+        displayText,
+        fontSize,
+        font,
+        fontStyle,
+        letterSpacing,
+        1.2
+      );
 
-      width = Math.max(tempText.width() + 40, fontSize * 3);
-      height = Math.max(tempText.height() + 30, fontSize * 1.5);
-      tempText.destroy();
+      width = Math.max(measurements.width + 40, fontSize * 3);
+      height = Math.max(measurements.height + 30, fontSize * 1.5);
       lineHeight = 1.2;
     }
 
@@ -432,24 +474,18 @@ const textConfig = computed(() => {
       config.strokeWidth = props.element.stroke.width || 2;
     }
 
-    // Apply shadow or engrave (engrave overrides shadow)
     if (props.element.engrave) {
-      // Engrave effect: Create realistic carved/engraved appearance
-      // 1. Add inner shadow (dark) for depth
       config.shadowColor = '#000000';
       config.shadowBlur = 3;
       config.shadowOffsetX = -1;
       config.shadowOffsetY = -1;
       config.shadowOpacity = 0.8;
 
-      // 2. Add stroke highlight on opposite side for 3D effect
       config.stroke = 'rgba(255, 255, 255, 0.4)';
       config.strokeWidth = 1;
 
-      // 3. Slightly darken the fill for carved-in appearance
       const originalFill = config.fill || '#000000';
       if (originalFill.startsWith('#')) {
-        // Darken hex color
         const darkenColor = (hex) => {
           const r = Math.max(0, parseInt(hex.slice(1, 3), 16) - 30);
           const g = Math.max(0, parseInt(hex.slice(3, 5), 16) - 30);
@@ -474,26 +510,21 @@ const textConfig = computed(() => {
     const font = props.element.font || 'Roboto';
     const letterSpacing = props.element.letterSpacing || 0;
 
-    // CRITICAL FIX: Use Konva's measureText for accurate width
-    const tempText = new Konva.Text({
-      text: text,
-      fontSize: fontSize,
-      fontFamily: font,
-      fontStyle: `${props.element.bold ? 'bold' : 'normal'} ${props.element.italic ? 'italic' : 'normal'}`,
-      letterSpacing: letterSpacing,
-      lineHeight: props.element.lineHeight || 1.2,
-    });
+    const fontStyle = `${props.element.bold ? 'bold' : 'normal'} ${props.element.italic ? 'italic' : 'normal'}`;
+    const measurements = getTextMeasurements(
+      text,
+      fontSize,
+      font,
+      fontStyle,
+      letterSpacing,
+      props.element.lineHeight || 1.2
+    );
 
-    // Get actual measured dimensions
-    let width = tempText.width();
-    let height = tempText.height();
+    let width = measurements.width;
+    let height = measurements.height;
 
-    // Add padding for safety
     width = Math.max(width + 20, 100);
     height = Math.max(height + 10, fontSize * 1.2);
-
-    // Cleanup temp text
-    tempText.destroy();
 
     const config = {
       text: text,
@@ -520,24 +551,18 @@ const textConfig = computed(() => {
       config.strokeWidth = props.element.stroke.width || 2;
     }
 
-    // Apply shadow or engrave (engrave overrides shadow)
     if (props.element.engrave) {
-      // Engrave effect: Create realistic carved/engraved appearance
-      // 1. Add inner shadow (dark) for depth
       config.shadowColor = '#000000';
       config.shadowBlur = 3;
       config.shadowOffsetX = -1;
       config.shadowOffsetY = -1;
       config.shadowOpacity = 0.8;
 
-      // 2. Add stroke highlight on opposite side for 3D effect
       config.stroke = 'rgba(255, 255, 255, 0.4)';
       config.strokeWidth = 1;
 
-      // 3. Slightly darken the fill for carved-in appearance
       const originalFill = config.fill || '#000000';
       if (originalFill.startsWith('#')) {
-        // Darken hex color
         const darkenColor = (hex) => {
           const r = Math.max(0, parseInt(hex.slice(1, 3), 16) - 30);
           const g = Math.max(0, parseInt(hex.slice(3, 5), 16) - 30);
@@ -835,7 +860,6 @@ watch(() => [props.element.fontSize, props.element.content, props.element.scale]
   }
 }, { deep: true });
 
-// CRITICAL: Force redraw when text/monogram properties change
 watch(
   () => [
     props.element.font,
@@ -934,7 +958,6 @@ const cleanupTextThrottling = () => {
   pendingTextUpdate = null;
 };
 
-// Listen for fonts-loaded event and force redraw
 let fontsLoadedListener = null;
 
 onMounted(() => {
@@ -956,7 +979,6 @@ onUnmounted(() => {
   cleanupBatchDraw();
   cleanupTextThrottling();
 
-  // Remove fonts-loaded listener
   if (fontsLoadedListener && typeof window !== 'undefined') {
     window.removeEventListener('fonts-loaded', fontsLoadedListener);
   }
